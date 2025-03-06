@@ -34,4 +34,20 @@ export function usePlanets() {
           orbitalPeriod: p.pl_orbper ? p.pl_orbper.toFixed(2) : "Unknown",
           imageUrl: `https://source.unsplash.com/400x400/?planet,space`, // Imagen aleatoria de planetas
           funFacts: [`Discovered orbiting ${p.hostname}.`],
+          type: "Exoplanet"
+        }));
+
+        setPlanets(transformedPlanets);
+      } catch (error) {
+        console.error("Error fetching planets:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPlanets();
+  }, []);
+
+  return { planets, loading };
+}
 
