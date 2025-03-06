@@ -1,3 +1,12 @@
+export interface IStorage {
+  getPlanets(): Promise<Planet[]>;
+  getPlanet(id: number): Promise<Planet | undefined>;
+  saveQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt>;
+  getQuizAttempts(): Promise<QuizAttempt[]>;
+}
+
+import { Planet, QuizAttempt, InsertQuizAttempt } from "../shared/schema";
+
 export class MemStorage implements IStorage {
   private quizAttempts: Map<number, QuizAttempt>;
   private currentId: number;
@@ -47,3 +56,6 @@ export class MemStorage implements IStorage {
     return Array.from(this.quizAttempts.values());
   }
 }
+
+// Create and export a storage instance
+export const storage = new MemStorage();
