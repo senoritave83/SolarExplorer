@@ -1,16 +1,37 @@
 import { useRoute } from "wouter";
-import { PLANET_DATA } from "@shared/constants";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useEffect, useState } from "react";
 
 export default function Planet() {
   const [, params] = useRoute("/planet/:id");
-  const planet = PLANET_DATA.find(p => p.id === Number(params?.id));
+  const [planet, setPlanet] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!planet) {
-    return <div>Planet not found</div>;
-  }
+  useEffect(() => {
+    async function fetchPlanetData() {
+      try {
+        const response = await fetch(
+          "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name,pl_rade,pl_orbper,pl_orbsmax,hostname+from+pscomppars&format=json"
+        );
+        const data = await response.json();
+
+        // Buscar el planeta por índice (o usar otro criterio)
+        const planetData = data[params?.id]; // Suponiendo que `id` es un índice
+        setPlanet(planetData);
+      } catch (error) {
+        console.error("Error fetching planet data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPlanetData();
+  }, [params?.id]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!planet) return <div>Planet not found</div>;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -20,14 +41,8 @@ export default function Planet() {
         className="space-y-8"
       >
         <div className="relative h-96 rounded-lg overflow-hidden">
-          <img
-            src={planet.imageUrl}
-            alt={planet.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
           <h1 className="absolute bottom-8 left-8 text-4xl font-bold">
-            {planet.name}
+            {planet.pl_name}
           </h1>
         </div>
 
@@ -36,7 +51,7 @@ export default function Planet() {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Overview</h2>
               <p className="text-muted-foreground">
-                {planet.description}
+                {planet.pl_name} orbits the star {planet.hostname}.
               </p>
             </CardContent>
           </Card>
@@ -46,36 +61,23 @@ export default function Planet() {
               <h2 className="text-xl font-semibold mb-4">Physical Properties</h2>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Diameter</p>
-                  <p className="font-medium">{planet.diameter.toLocaleString()} km</p>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm text-muted-foreground">Distance from Sun</p>
-                  <p className="font-medium">{planet.distanceFromSun} million km</p>
+                  <p className="text-sm text-muted-foreground">Radius</p>
+                  <p className="font-medium">{planet.pl_rade} Earth radii</p>
                 </div>
                 <Separator />
                 <div>
                   <p className="text-sm text-muted-foreground">Orbital Period</p>
-                  <p className="font-medium">{planet.orbitalPeriod} Earth days</p>
+                  <p className="font-medium">{planet.pl_orbper} days</p>
+                </div>
+                <Separator />
+                <div>
+                  <p className="text-sm text-muted-foreground">Distance from Star</p>
+                  <p className="font-medium">{planet.pl_orbsmax} AU</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Fun Facts</h2>
-            <ul className="list-disc list-inside space-y-2">
-              {planet.funFacts.map((fact, index) => (
-                <li key={index} className="text-muted-foreground">
-                  {fact}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
       </motion.div>
     </div>
   );

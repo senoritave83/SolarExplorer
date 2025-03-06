@@ -1,13 +1,3 @@
-import { type Planet, type InsertPlanet, type QuizAttempt, type InsertQuizAttempt } from "@shared/schema";
-import { PLANET_DATA } from "@shared/constants";
-
-export interface IStorage {
-  getPlanets(): Promise<Planet[]>;
-  getPlanet(id: number): Promise<Planet | undefined>;
-  saveQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt>;
-  getQuizAttempts(): Promise<QuizAttempt[]>;
-}
-
 export class MemStorage implements IStorage {
   private quizAttempts: Map<number, QuizAttempt>;
   private currentId: number;
@@ -18,11 +8,32 @@ export class MemStorage implements IStorage {
   }
 
   async getPlanets(): Promise<Planet[]> {
-    return PLANET_DATA;
+    try {
+      const response = await fetch(
+        "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name,pl_rade,pl_orbper,pl_orbsmax,hostname+from+pscomppars&format=json"
+      );
+      const data = await response.json();
+
+      // Convertir la estructura de la API en el formato de tu app
+      return data.map((p: any, index: number) => ({
+        id: index, // Usamos el índice como ID temporal
+        name: p.pl_name,
+        diameter: p.pl_rade ? p.pl_rade * 12742 : "Unknown", // Radio en radios terrestres convertido a km
+        distanceFromSun: p.pl_orbsmax ? p.pl_orbsmax * 149597870 : "Unknown", // Convertimos de AU a km
+        orbitalPeriod: p.pl_orbper || "Unknown",
+        description: `An exoplanet orbiting the star ${p.hostname}.`,
+        funFacts: [`Discovered orbiting ${p.hostname}.`],
+        imageUrl: `https://exoplanetarchive.ipac.caltech.edu/images/exoimg/${p.pl_name}.jpg`, // Puede que no existan imágenes
+      }));
+    } catch (error) {
+      console.error("Error fetching planets:", error);
+      return [];
+    }
   }
 
   async getPlanet(id: number): Promise<Planet | undefined> {
-    return PLANET_DATA.find(p => p.id === id);
+    const planets = await this.getPlanets();
+    return planets.find(p => p.id === id);
   }
 
   async saveQuizAttempt(attempt: InsertQuizAttempt): Promise<QuizAttempt> {
@@ -36,5 +47,3 @@ export class MemStorage implements IStorage {
     return Array.from(this.quizAttempts.values());
   }
 }
-
-export const storage = new MemStorage();
