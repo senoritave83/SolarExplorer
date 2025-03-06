@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { z } from "zod";
 
 export interface Planet {
   id: number;
@@ -50,4 +51,21 @@ export function usePlanets() {
 
   return { planets, loading };
 }
+
+export interface QuizAttempt {
+  id: number;
+  username: string;
+  score: number;
+  totalQuestions: number;
+  completedAt: string;
+}
+
+export type InsertQuizAttempt = Omit<QuizAttempt, "id">;
+
+export const insertQuizAttemptSchema = z.object({
+  username: z.string().min(1),
+  score: z.number().int().min(0),
+  totalQuestions: z.number().int().min(1),
+  completedAt: z.string().datetime()
+});
 
