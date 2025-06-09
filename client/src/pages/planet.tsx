@@ -12,13 +12,13 @@ export default function Planet() {
   useEffect(() => {
     async function fetchPlanetData() {
       try {
-        const response = await fetch(
-          "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name,pl_rade,pl_orbper,pl_orbsmax,hostname+from+pscomppars&format=json"
-        );
-        const data = await response.json();
-
-        // Buscar el planeta por índice (o usar otro criterio)
-        const planetData = data[params?.id]; // Suponiendo que `id` es un índice
+        const response = await fetch(`/api/planets/${params?.id}`);
+        
+        if (!response.ok) {
+          throw new Error("Planet not found");
+        }
+        
+        const planetData = await response.json();
         setPlanet(planetData);
       } catch (error) {
         console.error("Error fetching planet data:", error);
@@ -27,7 +27,9 @@ export default function Planet() {
       }
     }
 
-    fetchPlanetData();
+    if (params?.id) {
+      fetchPlanetData();
+    }
   }, [params?.id]);
 
   if (loading) return <div>Loading...</div>;
@@ -42,7 +44,7 @@ export default function Planet() {
       >
         <div className="relative h-96 rounded-lg overflow-hidden">
           <h1 className="absolute bottom-8 left-8 text-4xl font-bold">
-            {planet.pl_name}
+            {planet.name}
           </h1>
         </div>
 
@@ -51,7 +53,7 @@ export default function Planet() {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-4">Overview</h2>
               <p className="text-muted-foreground">
-                {planet.pl_name} orbits the star {planet.hostname}.
+                {planet.description || `${planet.name} is an exoplanet with unique characteristics.`}
               </p>
             </CardContent>
           </Card>
@@ -61,18 +63,18 @@ export default function Planet() {
               <h2 className="text-xl font-semibold mb-4">Physical Properties</h2>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Radius</p>
-                  <p className="font-medium">{planet.pl_rade} Earth radii</p>
+                  <p className="text-sm text-muted-foreground">Diameter</p>
+                  <p className="font-medium">{planet.diameter || 'Unknown'}</p>
                 </div>
                 <Separator />
                 <div>
                   <p className="text-sm text-muted-foreground">Orbital Period</p>
-                  <p className="font-medium">{planet.pl_orbper} days</p>
+                  <p className="font-medium">{planet.orbitalPeriod || 'Unknown'}</p>
                 </div>
                 <Separator />
                 <div>
-                  <p className="text-sm text-muted-foreground">Distance from Star</p>
-                  <p className="font-medium">{planet.pl_orbsmax} AU</p>
+                  <p className="text-sm text-muted-foreground">Distance from Sun</p>
+                  <p className="font-medium">{planet.distanceFromSun || 'Unknown'}</p>
                 </div>
               </div>
             </CardContent>
